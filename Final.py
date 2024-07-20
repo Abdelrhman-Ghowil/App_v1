@@ -25,12 +25,35 @@ def download_image(url):
     return None
 
 # Function to resize image to a specific size
-def resize_image(image_content, size=(1024, 1024)):
+def resize_image(image_content, size=(1024, 1024), aspect_ratio_threshold=2):
     try:
         image = Image.open(BytesIO(image_content))
+        
+        # Get original dimensions
+        original_width, original_height = image.size
+        aspect_ratio = original_width / original_height
+        
+        # Calculate the inverse aspect ratio threshold
+        inverse_threshold = 1 / aspect_ratio_threshold
+
+        # Check aspect ratio and crop if necessary
+        if aspect_ratio < inverse_threshold:  # Image is too tall
+            new_height = int(original_width / inverse_threshold)
+            crop_top = (original_height - new_height) // 2
+            image = image.crop((0, crop_top, original_width, crop_top + new_height))
+        elif aspect_ratio > aspect_ratio_threshold:  # Image is too wide
+            new_width = int(original_height * aspect_ratio_threshold)
+            crop_left = (original_width - new_width) // 2
+            image = image.crop((crop_left, 0, crop_left + new_width, original_height))
+        
+        # Resize the image to the desired size
         image = image.resize(size)
+        
+        # Convert to 'RGB' if necessary
         if image.mode == 'RGBA':
             image = image.convert('RGB')
+        
+        # Save the resized image to a BytesIO object
         img_byte_arr = BytesIO()
         image.save(img_byte_arr, format='JPEG')
         return img_byte_arr.getvalue()
@@ -115,11 +138,12 @@ def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_im
                     zf.writestr(f"{name.rsplit('.', 1)[0]}.{ext}", processed_image)
     zip_buffer.seek(0)
     return zip_buffer
-
+st.set_page_config(page_title="PhotoMaster", page_icon="🖼️")
 st.title("🖼️ PhotoMaster")
 
 # Page layout
 col1, col2 = st.columns([2, 1])
+threshold = 2.0
 
 with col1:
     uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic", "pdf"], accept_multiple_files=True)
@@ -127,7 +151,12 @@ with col2:
     st.markdown("")
     remove_bg = st.checkbox("Remove background")
     add_bg = st.checkbox("Add background")
+    # make a row for resize and in check for udvanced options
     resize_fg = st.checkbox("Resize")
+    if resize_fg:
+        udvanced = st.checkbox("Advanced Resize Options")
+        if udvanced:
+            threshold = st.slider("Aspect Ratio Threshold", 1.0, 2.5, 1.5)
     st.checkbox("Compress and Convert Format")
     st.button("Submit")
 
@@ -255,7 +284,7 @@ if images_info:
                     ext = 'png'
                 else:
                     size = (1290, 789) if "banner" in name.lower() else (1024, 1024)
-                    processed_image = resize_image(image_content, size=size)
+                    processed_image = resize_image(image_content, size=size, aspect_ratio_threshold=threshold)
                     ext = "png"
 
                 if add_bg and bg_image:
