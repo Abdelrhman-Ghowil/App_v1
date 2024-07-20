@@ -109,7 +109,7 @@ def combine_with_background(foreground_content, background_content, resize_foreg
         return None, None
 
 # Function to download all images as a ZIP file
-def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_image=None, resize_foreground=False):
+def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_image=None, resize_foreground=False,threshold=2):
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, 'w') as zf:
         for name, url_or_file in images_info:
@@ -127,7 +127,7 @@ def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_im
                     ext = 'png'
                 else:
                     size = (1290, 789) if "banner" in name.lower() else (1024, 1024)
-                    processed_image = resize_image(image_content, size=size)
+                    processed_image = resize_image(image_content, size=size, aspect_ratio_threshold=threshold)
                     ext = "png"
 
                 if add_bg and bg_image:
@@ -258,7 +258,7 @@ if images_info:
 
     st.markdown("## Preview")
     if st.button("Download All Images", key="download_all"):
-        zip_buffer = download_all_images_as_zip(images_info, remove_bg=remove_bg, add_bg=add_bg, bg_image=bg_image, resize_foreground=resize_fg)
+        zip_buffer = download_all_images_as_zip(images_info, remove_bg=remove_bg, add_bg=add_bg, bg_image=bg_image, resize_foreground=resize_fg, threshold=threshold)
         st.download_button(
             label="Download All Images as ZIP",
             data=zip_buffer,
