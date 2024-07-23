@@ -221,7 +221,7 @@ if uploaded_files:
     if file_type == 'mixed':
         st.error("You should work with one type of file: either an Excel file, images, or a PDF.")
     else:
-        if file_type == 'excel' and images_type == "Links to images":
+        if file_type == 'excel' and images_type == "Links of images":
             uploaded_file = uploaded_files[0]
             if uploaded_file.name.endswith('.xlsx'):
                 xl = pd.ExcelFile(uploaded_file)
