@@ -1,3 +1,5 @@
+import shutil
+import zipfile
 import streamlit as st
 import pandas as pd
 import requests
@@ -8,6 +10,7 @@ import re
 from transformers import pipeline
 from collections import defaultdict
 import pypdfium2 as pdfium
+import os
 
 # Function to convert Google Drive link to direct download link
 def convert_drive_link(link):
@@ -59,7 +62,7 @@ def resize_image(image_content, size=(1024, 1024), aspect_ratio_threshold=2):
         return img_byte_arr.getvalue()
     except UnidentifiedImageError:
         return None
-
+    
 # Function to remove background from an image
 def remove_background(image_content):
     try:
@@ -138,6 +141,47 @@ def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_im
                     zf.writestr(f"{name.rsplit('.', 1)[0]}.{ext}", processed_image)
     zip_buffer.seek(0)
     return zip_buffer
+
+def extract_all_images(file_path, output_dir):
+    with zipfile.ZipFile(file_path, 'r') as archive:
+        # Ensure the output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+        
+        image_files = [f for f in archive.namelist() if f.startswith('xl/media/')]
+        images_info = []
+        
+        for i, image_file in enumerate(image_files, start=1):
+            image_name = f"image_{i}.jpeg"
+            image_path = os.path.join(output_dir, image_name)
+            with open(image_path, 'wb') as img_file:
+                img_file.write(archive.read(image_file))
+            images_info.append({'image_name': image_name, 'image_path': image_path})
+            print(f"Extracted {image_name}")
+        
+        return images_info
+
+def rename_images_based_on_sheet(file_path, output_dir):
+    # Load the Excel sheet to get the names
+    try:
+        excel_data = pd.read_excel(file_path, sheet_name=0)
+    except Exception as e:
+        st.error(f"An error occurred while reading the Excel file: {e}")
+        return
+
+    # Extract all images from the provided Excel file
+    extracted_images = extract_all_images(file_path, output_dir)
+    
+    # Rename images based on the names in the Excel sheet
+    for idx, row in excel_data.iterrows():
+        name = row.get('Name')
+        if pd.notna(name):
+            old_image_path = os.path.join(output_dir, f"image_{idx + 1}.jpeg")
+            new_image_path = os.path.join(output_dir, f"{name}.jpeg")
+            if os.path.exists(old_image_path):
+                os.rename(old_image_path, new_image_path)
+                print(f"Renamed {old_image_path} to {new_image_path}")
+
+# Streamlit app
 st.set_page_config(page_title="PhotoMaster", page_icon="🖼️")
 st.title("🖼️ PhotoMaster")
 
@@ -163,6 +207,9 @@ with col2:
 images_info = []
 if uploaded_files:
     if len(uploaded_files) == 1 and uploaded_files[0].name.endswith(('.xlsx', '.csv')):
+        # ask user  is images embedded in excel file or links as radio button
+        st.write("Select the type of images in the Excel file:")
+        images_type = st.radio("Images are:", ["Links of images","Embedded in Excel file"])
         file_type = 'excel'
     elif all(file.type.startswith('image/') for file in uploaded_files):
         file_type = 'images'
@@ -174,7 +221,7 @@ if uploaded_files:
     if file_type == 'mixed':
         st.error("You should work with one type of file: either an Excel file, images, or a PDF.")
     else:
-        if file_type == 'excel':
+        if file_type == 'excel' and images_type == "Links to images":
             uploaded_file = uploaded_files[0]
             if uploaded_file.name.endswith('.xlsx'):
                 xl = pd.ExcelFile(uploaded_file)
@@ -233,6 +280,35 @@ if uploaded_files:
                         st.warning(f"Number of empty cells in 'name' column: {empty_count}")
                 else:
                     st.error("The uploaded file must contain 'links' and 'name' columns.")
+        
+        elif file_type == 'excel' and images_type == "Embedded in Excel file":
+            # Create a temporary directory for the uploaded file
+            temp_dir = "temp"
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            
+            # Save the uploaded file to disk
+            file_path = os.path.join(temp_dir, uploaded_files[0].name)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_files[0].getbuffer())
+            
+            # Determine file type and read data
+            if uploaded_files[0].name.endswith((".xlsx", ".xls")):
+                df = pd.read_excel(file_path, sheet_name=0)
+            elif uploaded_files[0].name.endswith(".csv"):
+                df = pd.read_csv(file_path)
+            
+            # Create a temporary directory for extracted images
+            output_dir = os.path.join(temp_dir, "extracted_images")
+            if os.path.exists(output_dir):
+                shutil.rmtree(output_dir)
+            
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Extract and rename images
+            rename_images_based_on_sheet(file_path, output_dir)
+
+            images_info = [(image, open(os.path.join(output_dir, image), "rb").read()) for image in os.listdir(output_dir)]
 
         elif file_type == 'images':
             images_info = [(file.name, file) for file in uploaded_files]
