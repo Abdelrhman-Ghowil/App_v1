@@ -377,5 +377,6 @@ if images_info:
                         label=f"Download {name.rsplit('.', 1)[0]}",
                         data=processed_image,
                         file_name=f"{name.rsplit('.', 1)[0]}.{ext}",
-                        mime=f"image/{ext}"
+                        mime=f"image/{ext}",
+                        key=f"download_{i}"  # Unique key based on index
                     )
