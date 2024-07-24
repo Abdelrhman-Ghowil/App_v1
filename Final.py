@@ -27,10 +27,18 @@ def download_image(url):
         return response.content
     return None
 
+
 # Function to resize image to a specific size
 def resize_image(image_content, size=(1024, 1024), aspect_ratio_threshold=2):
     try:
         image = Image.open(BytesIO(image_content))
+        
+        # Convert to 'RGB' if necessary
+        if image.mode not in ['RGB', 'RGBA']:
+            image = image.convert('RGB')
+
+        if image.mode == 'RGBA':
+            image = image.convert('RGB')
         
         # Get original dimensions
         original_width, original_height = image.size
@@ -51,10 +59,6 @@ def resize_image(image_content, size=(1024, 1024), aspect_ratio_threshold=2):
         
         # Resize the image to the desired size
         image = image.resize(size)
-        
-        # Convert to 'RGB' if necessary
-        if image.mode == 'RGBA':
-            image = image.convert('RGB')
         
         # Save the resized image to a BytesIO object
         img_byte_arr = BytesIO()
