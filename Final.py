@@ -190,7 +190,7 @@ col1, col2 = st.columns([2, 1])
 threshold = 2.0
 
 with col1:
-    uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic", "pdf"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF", "pdf"], accept_multiple_files=True)
 with col2:
     st.markdown("")
     remove_bg = st.checkbox("Remove background")
