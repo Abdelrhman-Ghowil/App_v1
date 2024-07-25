@@ -13,12 +13,19 @@ import pypdfium2 as pdfium
 import os
 
 # Function to convert Google Drive link to direct download link
+@st.cache_data
 def convert_drive_link(link):
-    match = re.search(r'/d/([^/]+)', link)
-    if match:
-        file_id = match.group(1)
+    # Try to match the link with /d/ pattern
+    match_d = re.search(r'/d/([^/]+)', link)
+    if match_d:
+        file_id = match_d.group(1)
         return f"https://drive.google.com/uc?export=download&id={file_id}"
-    return link
+    
+    # Try to match the link with id= pattern
+    match_id = re.search(r'id=([^&]+)', link)
+    if match_id:
+        file_id = match_id.group(1)
+        return f"https://drive.google.com/uc?export=download&id={file_id}"
 
 # Function to download an image from a URL
 def download_image(url):
