@@ -22,9 +22,10 @@ def convert_drive_link(link):
         return f"https://drive.google.com/uc?export=download&id={file_id}"
     
     # Try to match the link with id= pattern
-    match_id = re.search(r'id=([^&]+)', link)
+    #match_id = re.search(r'id=([^&]+)', link)
+    match_id = re.search(r'[-\w]{25,}', link)
     if match_id:
-        file_id = match_id.group(1)
+        file_id = match_id.group(0)
         return f"https://drive.google.com/uc?export=download&id={file_id}"
 
 # Function to download an image from a URL
