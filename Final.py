@@ -16,10 +16,10 @@ import os
 
 def convert_drive_link(link):
     # Try to match the link with /d/ pattern
-    match_d = re.search(r'/d/([^/]+)', link)
-    if match_d:
-        file_id = match_d.group(1)
-        return f"https://drive.google.com/uc?export=download&id={file_id}"
+    #match_d = re.search(r'/d/([^/]+)', link)
+    #if match_d:
+        #file_id = match_d.group(1)
+        #return f"https://drive.google.com/uc?export=download&id={file_id}"
     
     # Try to match the link with id= pattern
     match_id = re.search(r'id=([^&]+)', link)
