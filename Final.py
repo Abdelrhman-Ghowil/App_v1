@@ -13,7 +13,7 @@ import pypdfium2 as pdfium
 import os
 
 # Function to convert Google Drive link to direct download link
-@st.cache_data
+
 def convert_drive_link(link):
     # Try to match the link with /d/ pattern
     match_d = re.search(r'/d/([^/]+)', link)
