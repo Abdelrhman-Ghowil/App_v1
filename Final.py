@@ -20,11 +20,10 @@ def convert_drive_link(link):
         file_id = match_d.group(1)
         return f"https://drive.google.com/uc?export=download&id={file_id}"
     
-    # Try to match the link with id= pattern
-    #match_id = re.search(r'id=([^&]+)', link)
-    match_id = re.search(r'[-\w]{25,}', link)
+    # Try to match the link with id= pattern or general pattern for Google Drive ID
+    match_id = re.search(r'id=([^&]+)|([-\\w]{25,})', link)
     if match_id:
-        file_id = match_id.group(2)
+        file_id = match_id.group(1) if match_id.group(1) else match_id.group(2)
         return f"https://drive.google.com/uc?export=download&id={file_id}"
     
     # Return the original link if no patterns matched
