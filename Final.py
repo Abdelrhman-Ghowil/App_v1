@@ -12,8 +12,7 @@ from collections import defaultdict
 import pypdfium2 as pdfium
 import os
 
-# Function to convert Google Drive link to direct download link
-
+@st.cache_data
 def convert_drive_link(link):
     # Try to match the link with /d/ pattern
     match_d = re.search(r'/d/([^/]+)', link)
@@ -22,60 +21,53 @@ def convert_drive_link(link):
         return f"https://drive.google.com/uc?export=download&id={file_id}"
     
     # Try to match the link with id= pattern
-    match_id = re.search(r'id=([^&]+)', link)
-    #match_id = re.search(r'[-\w]{25,}', link)
+    #match_id = re.search(r'id=([^&]+)', link)
+    match_id = re.search(r'[-\w]{25,}', link)
     if match_id:
-        file_id = match_id.group(0)
+        file_id = match_id.group(2)
         return f"https://drive.google.com/uc?export=download&id={file_id}"
+    
+    # Return the original link if no patterns matched
+    return link
 
-# Function to download an image from a URL
+@st.cache_data
 def download_image(url):
     response = requests.get(url)
     if response.status_code == 200:
         return response.content
     return None
 
-
-# Function to resize image to a specific size
+@st.cache_data
 def resize_image(image_content, size=(1024, 1024), aspect_ratio_threshold=2):
     try:
         image = Image.open(BytesIO(image_content))
-        
-        # Convert to 'RGB' if necessary
         if image.mode not in ['RGB', 'RGBA']:
             image = image.convert('RGB')
 
         if image.mode == 'RGBA':
             image = image.convert('RGB')
         
-        # Get original dimensions
         original_width, original_height = image.size
         aspect_ratio = original_width / original_height
-        
-        # Calculate the inverse aspect ratio threshold
         inverse_threshold = 1 / aspect_ratio_threshold
 
-        # Check aspect ratio and crop if necessary
-        if aspect_ratio < inverse_threshold:  # Image is too tall
+        if aspect_ratio < inverse_threshold:
             new_height = int(original_width / inverse_threshold)
             crop_top = (original_height - new_height) // 2
             image = image.crop((0, crop_top, original_width, crop_top + new_height))
-        elif aspect_ratio > aspect_ratio_threshold:  # Image is too wide
+        elif aspect_ratio > aspect_ratio_threshold:
             new_width = int(original_height * aspect_ratio_threshold)
             crop_left = (original_width - new_width) // 2
             image = image.crop((crop_left, 0, crop_left + new_width, original_height))
         
-        # Resize the image to the desired size
         image = image.resize(size)
-        
-        # Save the resized image to a BytesIO object
         img_byte_arr = BytesIO()
         image.save(img_byte_arr, format='JPEG')
         return img_byte_arr.getvalue()
     except UnidentifiedImageError:
         return None
-    
-# Function to remove background from an image
+
+@st.cache_data
 def remove_background(image_content):
     try:
         image = Image.open(BytesIO(image_content))
@@ -87,7 +79,7 @@ def remove_background(image_content):
     except UnidentifiedImageError:
         return None
 
-# Function to combine the foreground image with a background image
+@st.cache_data
 def combine_with_background(foreground_content, background_content, resize_foreground=False):
     try:
         foreground = Image.open(BytesIO(foreground_content)).convert("RGBA")
@@ -95,7 +87,6 @@ def combine_with_background(foreground_content, background_content, resize_foreg
         background = background.resize((1024, 1024))
 
         if resize_foreground:
-            # Calculate the scaling factor to cover 70% of the background
             fg_area = foreground.width * foreground.height
             bg_area = background.width * background.height
             scale_factor = (0.8 * bg_area / fg_area) ** 0.5
@@ -104,13 +95,10 @@ def combine_with_background(foreground_content, background_content, resize_foreg
             new_height = int(foreground.height * scale_factor)
 
             foreground = foreground.resize((new_width, new_height))
-
-            # Save the dimensions of the object
             dimensions = (new_width, new_height)
         else:
             dimensions = (foreground.width, foreground.height)
 
-        # Center the foreground on the background
         fg_width, fg_height = foreground.size
         bg_width, bg_height = background.size
         position = ((bg_width - fg_width) // 2, (bg_height - fg_height) // 2)
@@ -123,8 +111,8 @@ def combine_with_background(foreground_content, background_content, resize_foreg
     except UnidentifiedImageError:
         return None, None
 
-# Function to download all images as a ZIP file
-def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_image=None, resize_foreground=False,threshold=2):
+@st.cache_data
+def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_image=None, resize_foreground=False, threshold=2):
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, 'w') as zf:
         for name, url_or_file in images_info:
@@ -146,7 +134,7 @@ def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_im
                     ext = "png"
 
                 if add_bg and bg_image:
-                    processed_image, dimensions = combine_with_background(processed_image, bg_image, resize_foreground=resize_fg)
+                    processed_image, dimensions = combine_with_background(processed_image, bg_image, resize_foreground=resize_foreground)
                     ext = 'png'
 
                 if processed_image:
@@ -154,9 +142,9 @@ def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_im
     zip_buffer.seek(0)
     return zip_buffer
 
+@st.cache_data
 def extract_all_images(file_path, output_dir):
     with zipfile.ZipFile(file_path, 'r') as archive:
-        # Ensure the output directory exists
         os.makedirs(output_dir, exist_ok=True)
         
         image_files = [f for f in archive.namelist() if f.startswith('xl/media/')]
@@ -172,18 +160,16 @@ def extract_all_images(file_path, output_dir):
         
         return images_info
 
+@st.cache_data
 def rename_images_based_on_sheet(file_path, output_dir):
-    # Load the Excel sheet to get the names
     try:
         excel_data = pd.read_excel(file_path, sheet_name=0)
     except Exception as e:
         st.error(f"An error occurred while reading the Excel file: {e}")
         return
 
-    # Extract all images from the provided Excel file
     extracted_images = extract_all_images(file_path, output_dir)
     
-    # Rename images based on the names in the Excel sheet
     for idx, row in excel_data.iterrows():
         name = row.get('Name')
         if pd.notna(name):
@@ -207,7 +193,6 @@ with col2:
     st.markdown("")
     remove_bg = st.checkbox("Remove background")
     add_bg = st.checkbox("Add background")
-    # make a row for resize and in check for udvanced options
     resize_fg = st.checkbox("Resize")
     if resize_fg:
         udvanced = st.checkbox("Advanced Resize Options")
@@ -217,11 +202,11 @@ with col2:
     st.button("Submit")
 
 images_info = []
-if uploaded_files:
+
+if  uploaded_files:
     if len(uploaded_files) == 1 and uploaded_files[0].name.endswith(('.xlsx', '.csv')):
-        # ask user  is images embedded in excel file or links as radio button
         st.write("Select the type of images in the Excel file:")
-        images_type = st.radio("Images are:", ["Links of images","Embedded in Excel file"])
+        images_type = st.radio("Images are:", ["Links of images", "Embedded in Excel file"])
         file_type = 'excel'
     elif all(file.type.startswith('image/') for file in uploaded_files):
         file_type = 'images'
@@ -242,8 +227,6 @@ if uploaded_files:
                     df = xl.parse(sheet_name)
                     if 'links' in df.columns and ('name' in df.columns):
                         df.dropna(subset=['links'], inplace=True)
-
-                        # Handle empty and duplicate names
                         name_count = defaultdict(int)
                         empty_count = 0
                         unique_images_info = []
@@ -259,8 +242,6 @@ if uploaded_files:
                             unique_images_info.append((unique_name, link))
                             name_count[name] += 1
                         images_info.extend(unique_images_info)
-
-                        # Show message with the number of empty cells
                         if empty_count > 0:
                             st.warning(f"Number of empty cells in 'name' column: {empty_count}")
                     else:
@@ -269,8 +250,6 @@ if uploaded_files:
                 df = pd.read_csv(uploaded_file)
                 if 'links' in df.columns and ('name' in df.columns or 'names' in df.columns):
                     df.dropna(subset=['links'], inplace=True)
-                    
-                    # Handle empty and duplicate names
                     name_count = defaultdict(int)
                     empty_count = 0
                     unique_images_info = []
@@ -286,40 +265,31 @@ if uploaded_files:
                         unique_images_info.append((unique_name, link))
                         name_count[name] += 1
                     images_info.extend(unique_images_info)
-
-                    # Show message with the number of empty cells
                     if empty_count > 0:
                         st.warning(f"Number of empty cells in 'name' column: {empty_count}")
                 else:
                     st.error("The uploaded file must contain 'links' and 'name' columns.")
         
         elif file_type == 'excel' and images_type == "Embedded in Excel file":
-            # Create a temporary directory for the uploaded file
             temp_dir = "temp"
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
             
-            # Save the uploaded file to disk
             file_path = os.path.join(temp_dir, uploaded_files[0].name)
             with open(file_path, "wb") as f:
                 f.write(uploaded_files[0].getbuffer())
             
-            # Determine file type and read data
             if uploaded_files[0].name.endswith((".xlsx", ".xls")):
                 df = pd.read_excel(file_path, sheet_name=0)
             elif uploaded_files[0].name.endswith(".csv"):
                 df = pd.read_csv(file_path)
             
-            # Create a temporary directory for extracted images
             output_dir = os.path.join(temp_dir, "extracted_images")
             if os.path.exists(output_dir):
                 shutil.rmtree(output_dir)
             
             os.makedirs(output_dir, exist_ok=True)
-
-            # Extract and rename images
             rename_images_based_on_sheet(file_path, output_dir)
-
             images_info = [(image, open(os.path.join(output_dir, image), "rb").read()) for image in os.listdir(output_dir)]
 
         elif file_type == 'images':
