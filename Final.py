@@ -209,7 +209,7 @@ if  uploaded_files:
         file_type = 'excel'
     elif all(file.type.startswith('image/') for file in uploaded_files):
         file_type = 'images'
-    elif len(uploaded_files) == 1 and uploaded_files[0].type == 'application/pdf':
+    elif any(file.type == 'application/pdf' for file in uploaded_files):
         file_type = 'pdf'
     else:
         file_type = 'mixed'
@@ -294,17 +294,22 @@ if  uploaded_files:
         elif file_type == 'images':
             images_info = [(file.name, file) for file in uploaded_files]
 
-        elif file_type == 'pdf':
-            uploaded_file = uploaded_files[0]
-            pdf = pdfium.PdfDocument(uploaded_file)
-            fn = uploaded_file.name
+        # Check for any PDF files
+        elif any(file.type == 'application/pdf' for file in uploaded_files):  
             images_info = []
-            for i in range(len(pdf)):
-                page = pdf[i]
-                image = page.render(scale=1.45).to_pil()
-                img_byte_arr = BytesIO()
-                image.save(img_byte_arr, format='JPEG')
-                images_info.append((f"{fn.rsplit('.', 1)[0]}_page_{i + 1}.jpg", img_byte_arr.getvalue()))
+            # Loop through each uploaded PDF
+            for uploaded_file in uploaded_files: 
+                pdf = pdfium.PdfDocument(uploaded_file)
+                fn = uploaded_file.name
+                for i in range(len(pdf)):
+                    page = pdf[i]
+                    image = page.render(scale=1.45).to_pil()
+                    img_byte_arr = BytesIO()
+                    image.save(img_byte_arr, format='JPEG')
+                    if i == 0:
+                        images_info.append((f"{fn.rsplit('.', 1)[0]}.jpg", img_byte_arr.getvalue()))
+                    elif i > 0:
+                        images_info.append((f"{fn.rsplit('.', 1)[0]}_page_{i + 1}.jpg", img_byte_arr.getvalue()))
 
 if images_info:
     bg_image = None
