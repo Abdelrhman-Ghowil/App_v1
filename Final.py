@@ -11,6 +11,7 @@ from transformers import pipeline
 from collections import defaultdict
 import pypdfium2 as pdfium
 import os
+from bs4 import BeautifulSoup
 
 @st.cache_data
 def convert_drive_link(link):
@@ -25,16 +26,39 @@ def convert_drive_link(link):
     if match_id:
         file_id = match_id.group(1) if match_id.group(1) else match_id.group(2)
         return f"https://drive.google.com/uc?export=download&id={file_id}"
+
+    # Extract image ID from the Postimg URL
+    match_postimg = re.search(r'postimg.cc/([^/]+)', link)
+    if match_postimg:
+        image_id = match_postimg.group(1)
+        return f"https://i.postimg.cc/{image_id}/your-image-name.jpg"  # Update based on the actual image format
     
+    # If the link is from imgg.io, scrape the actual image URL
+    if "imgg.io" in link:
+        try:
+            response = requests.get(link)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                # Find the anchor tag with the specified class
+                img_tag = soup.find('a', {'class': 'btn btn-download default'})
+                if img_tag and 'href' in img_tag.attrs:
+                    return img_tag['href']  # Get the URL from the href attribute
+            else:
+                st.error(f"Failed to access the page. Status code: {response.status_code}")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+            
     # Return the original link if no patterns matched
     return link
 
 @st.cache_data
-def download_image(url):
+def download_image(url):    
     response = requests.get(url)
     if response.status_code == 200:
         return response.content
-    return None
+    else:
+        st.error(f"Failed to download image. Status code: {response.status_code}")
+        return None
 
 @st.cache_data
 def resize_image(image_content, size=(1024, 1024), aspect_ratio_threshold=2):
