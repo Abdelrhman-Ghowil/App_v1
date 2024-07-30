@@ -10,3 +10,4 @@ streamlit
 openpyxl
 pdf2image
 pypdfium2
+BeautifulSoup4
