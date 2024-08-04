@@ -34,7 +34,7 @@ def convert_drive_link(link):
         return f"https://i.postimg.cc/{image_id}/your-image-name.jpg"  # Update based on the actual image format
     
     # If the link is from imgg.io, scrape the actual image URL
-    if "imgg.io" in link:
+    if "imgg.io" or "ibb.co" in link:
         try:
             response = requests.get(link)
             if response.status_code == 200:
