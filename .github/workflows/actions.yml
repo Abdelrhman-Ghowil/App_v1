@@ -2,8 +2,8 @@ name: Run Scheduled Python Script
 
 on:
   schedule:
-    # Runs at every day at 00:00 UTC
-    - cron: '0 0 * * *'
+    # Runs at every 15 minutes
+    - cron: '*/15 * * * *'
 
 jobs:
   run-script:
@@ -16,12 +16,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.x  # Replace with your desired Python version
+        python-version: 3.x  # Adjust this line if you need a specific Python version
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -r requirements.txt  # Make sure you have a requirements.txt or adapt this step
 
     - name: Run Python script
       run: |
-        python Final.py
+        python Final.py  # The script to run
