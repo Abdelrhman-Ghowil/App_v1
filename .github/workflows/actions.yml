@@ -16,12 +16,27 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.x  # Adjust this line if you need a specific Python version
+        python-version: '3.11'  # Adjust this line if you need a specific Python version
 
     - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -r requirements.txt  # Make sure you have a requirements.txt or adapt this step
 
-    - name: Run Python script
+    - name: Execute Python script
+      env:
+        SOME_SECRET: ${{ secrets.SOME_SECRET }}
+      run: python Final.py  # Assuming this is your main script
+
+    - name: Commit files
       run: |
-        python Final.py  # The script to run
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -A
+        git diff-index --quiet HEAD || git commit -a -m "Updated logs" --allow-empty
+
+    - name: Push changes
+      uses: ad-m/github-push-action@v0.6.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: main
