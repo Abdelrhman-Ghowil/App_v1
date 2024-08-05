@@ -2,7 +2,7 @@ name: Run Scheduled Python Script
 
 on:
   schedule:
-    # Runs at every 15 minutes
+    # Runs every 15 minutes
     - cron: '*/15 * * * *'
 
 jobs:
@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3  # Updated to v3
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4  # Updated to v4
       with:
         python-version: '3.11'  # Adjust this line if you need a specific Python version
 
@@ -36,7 +36,7 @@ jobs:
         git diff-index --quiet HEAD || git commit -a -m "Updated logs" --allow-empty
 
     - name: Push changes
-      uses: ad-m/github-push-action@v0.6.0
+      uses: ad-m/github-push-action@v0.6.0  # Ensure this action is updated or consider alternatives
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: main
