@@ -28,15 +28,4 @@ jobs:
         SOME_SECRET: ${{ secrets.SOME_SECRET }}
       run: streamlit run Final.py  # Assuming this is your main script
 
-    - name: Commit files
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add -A
-        git diff-index --quiet HEAD || git commit -a -m "Updated logs" --allow-empty
-
-    - name: Push changes
-      uses: ad-m/github-push-action@v0.6.0  # Ensure this action is updated or consider alternatives
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: main
+   
