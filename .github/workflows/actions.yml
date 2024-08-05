@@ -1,4 +1,4 @@
-name: Run Scheduled Python Script
+name: Run Scheduled Streamlit App
 
 on:
   schedule:
@@ -11,21 +11,23 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3  # Updated to v3
+      uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v4  # Updated to v4
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11'  # Adjust this line if you need a specific Python version
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt  # Make sure you have a requirements.txt or adapt this step
+        pip install -r requirements.txt
 
-    - name: Execute Python script
+    - name: Run Streamlit app
       env:
         SOME_SECRET: ${{ secrets.SOME_SECRET }}
-      run: streamlit run Final.py  # Assuming this is your main script
+      run: |
+        nohup streamlit run Final.py --server.port 8501 &  # Run Streamlit in the background
+        sleep 10  # Wait for a few seconds to let Streamlit start
 
-   
+    # Optionally, you could add a step here to test the app's response
