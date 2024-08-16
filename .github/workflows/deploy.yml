@@ -18,9 +18,15 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+    - name: ls -a via ssh
+      uses: fifsky/ssh-action@master
+      with:
+        command: |
+          cd /tmp
+          ls -a
+        host: ${{ secrets.HOST }}
+        user: shobbak
+        key: ${{ secrets.PRIVATE_KEY}}
 
     - name: Restart the Streamlit service
       env:
