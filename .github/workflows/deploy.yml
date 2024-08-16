@@ -23,4 +23,4 @@ jobs:
         cd /home/shobbak/superpower/App_v1 &&
         git pull origin main &&
         source venv/bin/activate &&
-        sudo systemctl restart PhMr.service"
+        echo $SSH_PASSWORD | sudo -S systemctl restart PhMr.service"
