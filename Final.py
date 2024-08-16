@@ -222,7 +222,7 @@ with col2:
         if udvanced:
             threshold = st.slider("Aspect Ratio Threshold", 1.0, 2.5, 1.5)
     st.checkbox("Compress and Convert Format")
-    #st.button("Submit")
+    st.button("Submit")
 
 images_info = []
 
