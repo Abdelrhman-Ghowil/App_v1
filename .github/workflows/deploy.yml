@@ -23,5 +23,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Restart the Streamlit service
+      env:
+        SSHPASS: ${{ secrets.SSH_PASSWORD }}
       run: |
-        sudo systemctl restart PhMr.service
+        sshpass -e ssh -o StrictHostKeyChecking=no shobbak@128.140.37.194 "sudo systemctl restart PhMr.service"
