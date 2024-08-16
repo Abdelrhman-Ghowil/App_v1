@@ -1,27 +1,22 @@
-name: Test Server Connection and Create Directory in Superpower
+name: Create Directory in Superpower
 
 on:
   push:
     branches:
-      - main  # Trigger on push to the main branch
+      - main
 
 jobs:
-  test-connection:
+  create-directory:
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v3
 
-    - name: Test connection to server
-      run: |
-        SERVER_IP=128.140.37.194
-        ping -c 4 $SERVER_IP
-
     - name: Create directory in superpower on server
       env:
         SERVER_IP: 128.140.37.194
         SSH_USER: shobbak
-        SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
       run: |
-        ssh -o StrictHostKeyChecking=no -i $SSH_KEY $SSH_USER@$SERVER_IP "mkdir -p /home/shobbak/superpower/new_directory_name"
+        sshpass -p $SSH_PASSWORD ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "mkdir -p /home/shobbak/superpower/new_directory_name"
