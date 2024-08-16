@@ -19,4 +19,4 @@ jobs:
         SSH_USER: shobbak
         SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
       run: |
-        sshpass -p $SSH_PASSWORD ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "mkdir -p /home/shobbak/superpower/new_directory_name"
+        sshpass -p $SSH_PASSWORD ssh -o StrictHostKeyChecking=no $SSH_USER@$SERVER_IP "cd -p /home/shobbak/superpower"
