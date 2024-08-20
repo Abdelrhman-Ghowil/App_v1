@@ -12,6 +12,7 @@ from collections import defaultdict
 import pypdfium2 as pdfium
 import os
 from bs4 import BeautifulSoup
+from PIL import ImageOps  # Import ImageOps for flipping
 
 @st.cache_data
 def convert_drive_link(link):
@@ -201,6 +202,14 @@ def rename_images_based_on_sheet(file_path, output_dir):
             if os.path.exists(old_image_path):
                 os.rename(old_image_path, new_image_path)
                 print(f"Renamed {old_image_path} to {new_image_path}")
+                
+def flip_image(image, flip_horizontal=False, flip_vertical=False):
+    if flip_horizontal:
+        image = ImageOps.mirror(image)
+    if flip_vertical:
+        image = ImageOps.flip(image)
+    return image
+
 
 # Streamlit app
 st.set_page_config(page_title="PhotoMaster", page_icon="🖼️")
@@ -376,6 +385,22 @@ if images_info:
                 if add_bg and bg_image:
                     processed_image, dimensions = combine_with_background(processed_image, bg_image, resize_foreground=resize_fg)
                     ext = 'png'
+                
+                # Flip options
+                # Place flip options on the same row
+                flip_col1, flip_col2 = st.columns(2)
+                with flip_col1:
+                    flip_horizontal = st.checkbox("Flip Horizontally", key=f"flip_horizontal_{i}")
+                with flip_col2:
+                    flip_vertical = st.checkbox("Flip Vertically", key=f"flip_vertical_{i}")
+
+                # Apply flipping based on user selection
+                if flip_horizontal or flip_vertical:
+                    image = Image.open(BytesIO(processed_image))
+                    processed_image = flip_image(image, flip_horizontal, flip_vertical)
+                    img_byte_arr = BytesIO()
+                    processed_image.save(img_byte_arr, format='PNG')
+                    processed_image = img_byte_arr.getvalue()
 
                 if processed_image:
                     st.image(processed_image, caption=name)
