@@ -351,7 +351,10 @@ if images_info:
         if bg_file:
             bg_image = resize_image(bg_file.read())
         else:
-            default_bg_image = resize_image(open("./Bg.png", "rb").read())
+            # Use default background image if no new image is uploaded
+            with open("./Bg.png", "rb") as file:
+                default_bg_image = resize_image(file.read())
+                bg_image = default_bg_image
 
     st.markdown("## Preview")
     if st.button("Download All Images", key="download_all"):
