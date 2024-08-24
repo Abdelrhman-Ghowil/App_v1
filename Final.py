@@ -351,7 +351,7 @@ if images_info:
         if bg_file:
             bg_image = resize_image(bg_file.read())
         else:
-            default_bg_image = resize_image(open("./BG.png", "rb").read())
+            default_bg_image = resize_image(open("./Bg.png", "rb").read())
 
     st.markdown("## Preview")
     if st.button("Download All Images", key="download_all"):
