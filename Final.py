@@ -223,14 +223,14 @@ with col1:
     uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
 with col2:
     st.markdown("")
-    remove_bg = st.checkbox("Remove background")
-    add_bg = st.checkbox("Add background")
-    resize_fg = st.checkbox("Resize")
+    remove_bg = st.checkbox("📷Remove background")
+    add_bg = st.checkbox("📜Add background")
+    resize_fg = st.checkbox("🔛Resize")
     if resize_fg:
-        udvanced = st.checkbox("Advanced Resize Options")
+        udvanced = st.checkbox("💎Advanced Resize Options")
         if udvanced:
             threshold = st.slider("Aspect Ratio Threshold", 1.0, 2.5, 1.5)
-    st.checkbox("Compress and Convert Format")
+    st.checkbox("👊Compress and Convert Format")
     st.button("Submit")
 
 images_info = []
@@ -391,13 +391,20 @@ if images_info:
                     processed_image, dimensions = combine_with_background(processed_image, bg_image, resize_foreground=resize_fg)
                     ext = 'png'
                 
-                # Flip options
+                # Flip and rename options
                 # Place flip options on the same row
-                flip_col1, flip_col2 = st.columns(2)
+                flip_col1, flip_col2,rename_col3 = st.columns(3)
                 with flip_col1:
-                    flip_horizontal = st.checkbox("Flip Horizontally", key=f"flip_horizontal_{i}")
+                    flip_horizontal = st.checkbox("Flip🔁", key=f"flip_horizontal_{i}")
                 with flip_col2:
-                    flip_vertical = st.checkbox("Flip Vertically", key=f"flip_vertical_{i}")
+                    flip_vertical = st.checkbox("Flip🔃", key=f"flip_vertical_{i}")
+                with rename_col3:
+                    rename_image = st.checkbox(f"Rename", key=f"rename_checkbox_{i}")
+
+                if rename_image:
+                    new_name = st.text_input(f"Enter new name for {name} (without extension):", key=f"rename_input_{i}")
+                    if new_name:
+                        name = f"{new_name}.{ext}"  # Apply the new name
 
                 # Apply flipping based on user selection
                 if flip_horizontal or flip_vertical:
