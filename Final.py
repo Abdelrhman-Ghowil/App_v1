@@ -395,9 +395,9 @@ if images_info:
                 # Place flip options on the same row
                 flip_col1, flip_col2,rename_col3 = st.columns(3)
                 with flip_col1:
-                    flip_horizontal = st.checkbox("Flip🔁", key=f"flip_horizontal_{i}")
+                    flip_horizontal = st.checkbox("Flip H🔁", key=f"flip_horizontal_{i}")
                 with flip_col2:
-                    flip_vertical = st.checkbox("Flip🔃", key=f"flip_vertical_{i}")
+                    flip_vertical = st.checkbox("Flip V🔃", key=f"flip_vertical_{i}")
                 with rename_col3:
                     rename_image = st.checkbox(f"Rename", key=f"rename_checkbox_{i}")
 
