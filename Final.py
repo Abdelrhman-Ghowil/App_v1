@@ -222,12 +222,12 @@ threshold = 2.0
 
 with col1:
     # Specify the file types you want to accept
-    accepted_file_types = ["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic", "NEF", "ARW", "tiff", "pdf"]
+    #accepted_file_types = ["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic", "NEF", "ARW", "tiff", "pdf"]
     
     # Use the uploader component to upload files with chunking
-    uploaded_files = uploader("Upload your files", key="chunk_uploader", chunk_size=32, accept_multiple_files=True)
+    #uploaded_files = uploader("Upload your files", key="chunk_uploader", chunk_size=32, accept_multiple_files=True)
 
-    #uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
 with col2:
     st.markdown("")
     remove_bg = st.checkbox("📷Remove background")
