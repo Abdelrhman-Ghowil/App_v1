@@ -13,6 +13,7 @@ import pypdfium2 as pdfium
 import os
 from bs4 import BeautifulSoup
 from PIL import ImageOps  # Import ImageOps for flipping
+from streamlit_chunk_file_uploader import uploader # chunk_file for Fast upload
 
 @st.cache_data
 def convert_drive_link(link):
@@ -220,7 +221,13 @@ col1, col2 = st.columns([2, 1])
 threshold = 2.0
 
 with col1:
-    uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
+    # Specify the file types you want to accept
+    accepted_file_types = ["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic", "NEF", "ARW", "tiff", "pdf"]
+    
+    # Use the uploader component to upload files with chunking
+    uploaded_files = uploader("Upload your files", key="chunk_uploader", chunk_size=32, accept_multiple_files=True)
+
+    #uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
 with col2:
     st.markdown("")
     remove_bg = st.checkbox("📷Remove background")
