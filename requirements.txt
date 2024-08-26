@@ -11,3 +11,4 @@ openpyxl
 pdf2image
 pypdfium2
 BeautifulSoup4
+streamlit-chunk-file-uploader
