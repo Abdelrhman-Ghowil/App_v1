@@ -14,6 +14,28 @@ import os
 from bs4 import BeautifulSoup
 from PIL import ImageOps  # Import ImageOps for flipping
 
+#--------------------------------------Api Google-------------------------------------
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+
+# Function to authenticate Google Drive
+@st.cache_data
+def authenticate_gdrive():
+    credentials = service_account.Credentials.from_service_account_file('credentials.json')
+    return build('drive', 'v3', credentials=credentials)
+
+# Function to get list of image files from Google Drive folder
+def get_images_from_folder(folder_id, service):
+    results = service.files().list(
+        q=f"'{folder_id}' in parents and mimeType contains 'image/'",
+        pageSize=1000, fields="files(id, name)").execute()
+    return results.get('files', [])
+
+# Convert Google Drive file ID to direct download link
+def convert_drive_file(file_id):
+    return f"https://drive.google.com/uc?export=download&id={file_id}"
+
+#--------------------------------------Api Google-------------------------------------
 
 @st.cache_data
 def convert_drive_link(link):
@@ -225,6 +247,8 @@ with col1:
     # Specify the file types you want to accept
     uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
 
+    # Input field for Google Drive folder link
+    folder_link = st.text_input("Enter Google Drive folder link:")
 
 with col2:
     st.markdown("")
@@ -348,7 +372,32 @@ if  uploaded_files:
                         images_info.append((f"{fn.rsplit('.', 1)[0]}.jpg", img_byte_arr.getvalue()))
                     elif i > 0:
                         images_info.append((f"{fn.rsplit('.', 1)[0]}_page_{i + 1}.jpg", img_byte_arr.getvalue()))
-                        
+
+
+#-------------------------------folder Drive--------------------------------------------
+# Process images from Google Drive folder
+if folder_link:
+    folder_id_match = re.search(r'/folders/([a-zA-Z0-9_-]+)', folder_link)
+    if folder_id_match:
+        folder_id = folder_id_match.group(1)
+        
+        # Step 3: Authenticate and get images from folder
+        service = authenticate_gdrive()
+        images = get_images_from_folder(folder_id, service)
+        
+        if images:
+            st.write(f"Found {len(images)} images in the folder.")
+            for image in images:
+                file_id = image['id']
+                file_name = image['name']
+                image_url = convert_drive_file(file_id)
+                
+                image_content = download_image(image_url)
+                if image_content:
+                    images_info.append((file_name, image_content))
+#-------------------------------folder Drive--------------------------------------------
+
+# Process and display images
 if images_info:
     bg_image = None
     if add_bg:
