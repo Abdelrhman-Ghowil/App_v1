@@ -248,7 +248,7 @@ with col1:
     uploaded_files = st.file_uploader("", type=["xlsx", "csv", "jpg", "jpeg", "png", "jfif", "avif", "webp", "heic","NEF","ARW","tiff", "pdf"], accept_multiple_files=True)
 
     # Input field for Google Drive folder link
-    folder_link = st.text_input("Enter Google Drive folder link:")
+    folder_link = st.text_input("Enter Google Drive Link for (**Larger Files**)")
 
 with col2:
     st.markdown("")
