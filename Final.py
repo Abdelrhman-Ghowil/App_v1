@@ -13,6 +13,8 @@ import pypdfium2 as pdfium
 import os
 from bs4 import BeautifulSoup
 from PIL import ImageOps  # Import ImageOps for flipping
+from pdf2image import convert_from_bytes # import pdf2image for convert pdf
+import mimetypes
 
 #--------------------------------------Api Google-------------------------------------
 from google.oauth2 import service_account
@@ -25,7 +27,7 @@ def authenticate_gdrive():
     return build('drive', 'v3', credentials=credentials)
 
 # Function to get list of image files from Google Drive folder
-def get_images_from_folder(folder_id, service):
+def get_files_from_folder(folder_id, service):
     results = service.files().list(
         q=f"'{folder_id}' in parents and mimeType contains 'image/'",
         pageSize=1000, fields="files(id, name)").execute()
@@ -225,6 +227,17 @@ def rename_images_based_on_sheet(file_path, output_dir):
             if os.path.exists(old_image_path):
                 os.rename(old_image_path, new_image_path)
                 print(f"Renamed {old_image_path} to {new_image_path}")
+
+#-------------------------- Convert PDF to images-----------------------------
+@st.cache_data
+def convert_pdf_to_images(pdf_content):
+    try:
+        images = convert_from_bytes(pdf_content)
+        return images
+    except Exception as e:
+        st.error(f"Error converting PDF to images: {e}")
+        return []
+#-------------------------- Convert PDF to images-----------------------------
                 
 def flip_image(image, flip_horizontal=False, flip_vertical=False):
     if flip_horizontal:
@@ -383,18 +396,35 @@ if folder_link:
         
         # Step 3: Authenticate and get images from folder
         service = authenticate_gdrive()
-        images = get_images_from_folder(folder_id, service)
+        files = get_files_from_folder(folder_id, service)
         
-        if images:
-            st.write(f"Found {len(images)} images in the folder.")
-            for image in images:
-                file_id = image['id']
-                file_name = image['name']
-                image_url = convert_drive_file(file_id)
+        if files:
+            st.write(f"Found {len(files)} files in the folder.")
+            for file in files:
+                file_id = file['id']
+                file_name = file['name']
+                mime_type = file['mimeType']
+                file_url = convert_drive_file(file_id)
                 
-                image_content = download_image(image_url)
-                if image_content:
-                    images_info.append((file_name, image_content))
+                if 'image/' in mime_type:
+                    # Process image files
+                    image_content = download_image(file_url)
+                    if image_content:
+                        images_info.append((file_name, image_content))
+                elif mime_type == 'application/pdf':
+                    # Process PDF files
+                    pdf_content = download_image(file_url)
+                    if pdf_content:
+                        pdf_images = convert_pdf_to_images(pdf_content)
+                        for i, image in enumerate(pdf_images):
+                            img_byte_arr = BytesIO()
+                            image.save(img_byte_arr, format='JPEG')
+                            if i == 0:
+                                images_info.append((f"{file_name.rsplit('.', 1)[0]}.jpg", img_byte_arr.getvalue()))
+                            else:
+                                images_info.append((f"{file_name.rsplit('.', 1)[0]}_page_{i + 1}.jpg", img_byte_arr.getvalue()))
+
+
 #-------------------------------folder Drive--------------------------------------------
 
 # Process and display images
