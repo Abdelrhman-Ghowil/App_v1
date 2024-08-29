@@ -27,7 +27,7 @@ def authenticate_gdrive():
     return build('drive', 'v3', credentials=credentials)
 
 # Function to get list of image files from Google Drive folder
-def get_files_from_folder(folder_id, service):
+def get_images_from_folder(folder_id, service):
     results = service.files().list(
         q=f"'{folder_id}' in parents and mimeType contains 'image/'",
         pageSize=1000, fields="files(id, name)").execute()
@@ -396,35 +396,18 @@ if folder_link:
         
         # Step 3: Authenticate and get images from folder
         service = authenticate_gdrive()
-        files = get_files_from_folder(folder_id, service)
+        images = get_images_from_folder(folder_id, service)
         
-        if files:
-            st.write(f"Found {len(files)} files in the folder.")
-            for file in files:
-                file_id = file['id']
-                file_name = file['name']
-                mime_type = file['mimeType']
-                file_url = convert_drive_file(file_id)
+        if images:
+            st.write(f"Found {len(images)} images in the folder.")
+            for image in images:
+                file_id = image['id']
+                file_name = image['name']
+                image_url = convert_drive_file(file_id)
                 
-                if 'image/' in mime_type:
-                    # Process image files
-                    image_content = download_image(file_url)
-                    if image_content:
-                        images_info.append((file_name, image_content))
-                elif mime_type == 'application/pdf':
-                    # Process PDF files
-                    pdf_content = download_image(file_url)
-                    if pdf_content:
-                        pdf_images = convert_pdf_to_images(pdf_content)
-                        for i, image in enumerate(pdf_images):
-                            img_byte_arr = BytesIO()
-                            image.save(img_byte_arr, format='JPEG')
-                            if i == 0:
-                                images_info.append((f"{file_name.rsplit('.', 1)[0]}.jpg", img_byte_arr.getvalue()))
-                            else:
-                                images_info.append((f"{file_name.rsplit('.', 1)[0]}_page_{i + 1}.jpg", img_byte_arr.getvalue()))
-
-
+                image_content = download_image(image_url)
+                if image_content:
+                    images_info.append((file_name, image_content))
 #-------------------------------folder Drive--------------------------------------------
 
 # Process and display images
