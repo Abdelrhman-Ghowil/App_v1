@@ -26,11 +26,11 @@ def authenticate_gdrive():
     credentials = service_account.Credentials.from_service_account_file('credentials.json')
     return build('drive', 'v3', credentials=credentials)
 
-# Function to get list of image files from Google Drive folder
-def get_images_from_folder(folder_id, service):
+# Function to get list of files (images and PDFs) from Google Drive folder
+def get_files_from_folder(folder_id, service):
     results = service.files().list(
-        q=f"'{folder_id}' in parents and mimeType contains 'image/'",
-        pageSize=1000, fields="files(id, name)").execute()
+        q=f"'{folder_id}' in parents and (mimeType contains 'image/' or mimeType contains 'application/pdf')",
+        pageSize=1000, fields="files(id, name, mimeType)").execute()
     return results.get('files', [])
 
 # Convert Google Drive file ID to direct download link
@@ -388,27 +388,43 @@ if  uploaded_files:
 
 
 #-------------------------------folder Drive--------------------------------------------
-# Process images from Google Drive folder
+# Process files from Google Drive folder
 if folder_link:
     folder_id_match = re.search(r'/folders/([a-zA-Z0-9_-]+)', folder_link)
     if folder_id_match:
         folder_id = folder_id_match.group(1)
         
-        # Step 3: Authenticate and get images from folder
+        # Step 3: Authenticate and get files from folder
         service = authenticate_gdrive()
-        images = get_images_from_folder(folder_id, service)
+        files = get_files_from_folder(folder_id, service)
         
-        if images:
-            st.write(f"Found {len(images)} images in the folder.")
-            for image in images:
-                file_id = image['id']
-                file_name = image['name']
-                image_url = convert_drive_file(file_id)
-                
-                image_content = download_image(image_url)
-                if image_content:
-                    images_info.append((file_name, image_content))
+        if files:
+            st.write(f"Found {len(files)} files in the folder.")
+            for file in files:
+                file_id = file['id']
+                file_name = file['name']
+                mime_type = file['mimeType']
+
+                # If file is an image
+                if mime_type.startswith('image/'):
+                    image_url = convert_drive_file(file_id)
+                    image_content = download_image(image_url)
+                    if image_content:
+                        images_info.append((file_name, image_content))
+
+                # If file is a PDF
+                elif mime_type == 'application/pdf':
+                    pdf_url = convert_drive_file(file_id)
+                    pdf_content = download_image(pdf_url)
+                    if pdf_content:
+                        pdf_images = convert_pdf_to_images(pdf_content)
+                        for i, img in enumerate(pdf_images):
+                            img_byte_arr = BytesIO()
+                            img.save(img_byte_arr, format='JPEG')
+                            images_info.append((f"{file_name}_page_{i+1}.jpg", img_byte_arr.getvalue()))
+
 #-------------------------------folder Drive--------------------------------------------
+
 
 # Process and display images
 if images_info:
