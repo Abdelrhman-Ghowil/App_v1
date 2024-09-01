@@ -14,7 +14,7 @@ import os
 from bs4 import BeautifulSoup
 from PIL import ImageOps  # Import ImageOps for flipping
 from pdf2image import convert_from_bytes # import pdf2image for convert pdf
-import mimetypes
+
 
 #--------------------------------------Api Google-------------------------------------
 from google.oauth2 import service_account
