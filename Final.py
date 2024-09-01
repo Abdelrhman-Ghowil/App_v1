@@ -420,8 +420,8 @@ if folder_link:
                         pdf_images = convert_pdf_to_images(pdf_content)
                         for i, img in enumerate(pdf_images):
                             img_byte_arr = BytesIO()
-                            img.save(img_byte_arr, format='JPEG')
-                            images_info.append((f"{file_name}_page_{i+1}.jpg", img_byte_arr.getvalue()))
+                            img.save(img_byte_arr, format='PNG')
+                            images_info.append((f"{file_name}.png", img_byte_arr.getvalue()))
 
 #-------------------------------folder Drive--------------------------------------------
 
