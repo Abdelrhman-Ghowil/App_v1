@@ -421,7 +421,7 @@ if folder_link:
                         for i, img in enumerate(pdf_images):
                             img_byte_arr = BytesIO()
                             img.save(img_byte_arr, format='PNG')
-                            images_info.append((f"{file_name}.png", img_byte_arr.getvalue()))
+                            images_info.append((f"{file_name.rsplit('.', 1)[0]}.png", img_byte_arr.getvalue()))
 
 #-------------------------------folder Drive--------------------------------------------
 
