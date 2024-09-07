@@ -14,7 +14,7 @@ import os
 from bs4 import BeautifulSoup
 from PIL import ImageOps  # Import ImageOps for flipping
 from pdf2image import convert_from_bytes # import pdf2image for convert pdf
-
+import openpyxl #for extract links from hypridlink
 
 #--------------------------------------Api Google-------------------------------------
 from google.oauth2 import service_account
@@ -245,6 +245,46 @@ def flip_image(image, flip_horizontal=False, flip_vertical=False):
     if flip_vertical:
         image = ImageOps.flip(image)
     return image
+#---------------------extract links from hypridlink--------------------------------
+import openpyxl
+
+def extract_links(uploaded_file, links_column='links'):
+    # Ensure the file is an Excel file
+    if uploaded_file.name.endswith('.xlsx'):
+        # Load workbook using openpyxl
+        workbook = openpyxl.load_workbook(uploaded_file, data_only=True)
+        extracted_links = []
+
+        for sheet_name in workbook.sheetnames:
+            sheet = workbook[sheet_name]
+            
+            # Find the index of the 'links' column (assuming first row contains headers)
+            headers = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
+            if links_column not in headers:
+                continue  # Skip this sheet if the 'links' column is not found
+            
+            links_col_idx = headers.index(links_column) + 1  # openpyxl uses 1-based index for columns
+            
+            # Iterate over the rows, starting from the second row (skipping the header)
+            for row in sheet.iter_rows(min_row=2):
+                link_cell = row[links_col_idx - 1]  # Get the cell for the 'links' column
+
+                # Check if the cell contains a hyperlink using openpyxl
+                if link_cell.hyperlink:
+                    extracted_link = link_cell.hyperlink.target  # Extract the hyperlink URL
+                else:
+                    extracted_link = link_cell.value  # Use the plain value in the cell if no hyperlink
+
+                # Append the link (either hyperlink target or plain value)
+                if extracted_link:
+                    extracted_links.append(extracted_link)
+
+        return extracted_links
+    else:
+        raise ValueError("The uploaded file is not an Excel file.")
+
+
+#-----------------------------extract links from hypridlink------------------------
 
 
 # Streamlit app
@@ -296,6 +336,7 @@ if  uploaded_files:
             uploaded_file = uploaded_files[0]
             if uploaded_file.name.endswith('.xlsx'):
                 xl = pd.ExcelFile(uploaded_file)
+                
                 for sheet_name in xl.sheet_names:
                     st.write(f"Processing sheet: {sheet_name}")  # Debugging print
                     df = xl.parse(sheet_name)
@@ -304,7 +345,13 @@ if  uploaded_files:
                         name_count = defaultdict(int)
                         empty_count = 0
                         unique_images_info = []
-                        for name, link in zip(df['name'], df['links']):
+
+                        #----function extract links from hyprid links in excel
+                        links = extract_links(uploaded_file, links_column='links')
+                        #-----------------------------------------------------------
+                        #for name, link in zip(df['name'], df['links']):
+
+                        for name, link in zip(df['name'], links):
                             if pd.isna(name) or name.strip() == "":
                                 empty_name = f"empty_{empty_count}" if empty_count > 0 else "empty"
                                 name = empty_name
@@ -315,6 +362,7 @@ if  uploaded_files:
                                 unique_name = name
                             unique_images_info.append((unique_name, link))
                             name_count[name] += 1
+                        
                         images_info.extend(unique_images_info)
                         if empty_count > 0:
                             st.warning(f"Number of empty cells in 'name' column: {empty_count}")
