@@ -349,9 +349,9 @@ if  uploaded_files:
                         #----function extract links from hyprid links in excel
                         links = extract_links(uploaded_file, links_column='links')
                         #-----------------------------------------------------------
-                        #for name, link in zip(df['name'], df['links']):
+                        for name, link in zip(df['name'], df['links']):
 
-                        for name, link in zip(df['name'], links):
+                        #for name, link in zip(df['name'], links):
                             if pd.isna(name) or name.strip() == "":
                                 empty_name = f"empty_{empty_count}" if empty_count > 0 else "empty"
                                 name = empty_name
