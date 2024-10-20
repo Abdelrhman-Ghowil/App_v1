@@ -161,7 +161,7 @@ def combine_with_background(foreground_content, background_content, resize_foreg
         return None, None
 
 @st.cache_data
-def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_image=None, resize_foreground=False, threshold=2):
+def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_image=None, resize_foreground=False, threshold=2,flip_horizontal=False, flip_vertical=False):
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, 'w') as zf:
         for name, url_or_file in images_info:
@@ -185,6 +185,14 @@ def download_all_images_as_zip(images_info, remove_bg=False, add_bg=False, bg_im
                 if add_bg and bg_image:
                     processed_image, dimensions = combine_with_background(processed_image, bg_image, resize_foreground=resize_foreground)
                     ext = 'png'
+                
+                # Apply flipping based on user selection
+                if flip_horizontal or flip_vertical:
+                    image = Image.open(BytesIO(image_content))
+                    processed_image = flip_image(image, flip_horizontal, flip_vertical)
+                    img_byte_arr = BytesIO()
+                    processed_image.save(img_byte_arr, format='PNG')
+                    processed_image = img_byte_arr.getvalue()
 
                 if processed_image:
                     zf.writestr(f"{name.rsplit('.', 1)[0]}.{ext}", processed_image)
@@ -488,14 +496,16 @@ if images_info:
                 bg_image = default_bg_image
 
     st.markdown("## Preview")
-    if st.button("Download All Images", key="download_all"):
-        zip_buffer = download_all_images_as_zip(images_info, remove_bg=remove_bg, add_bg=add_bg, bg_image=bg_image, resize_foreground=resize_fg, threshold=threshold)
-        st.download_button(
-            label="Download All Images as ZIP",
-            data=zip_buffer,
-            file_name="all_images.zip",
-            mime="application/zip"
-        )
+    #-------------------------------Now Download All Images button @ End of page-----------------------
+    # if st.button("Download All Images", key="download_all"):
+    #     zip_buffer = download_all_images_as_zip(images_info, remove_bg=remove_bg, add_bg=add_bg, bg_image=bg_image, resize_foreground=resize_fg, threshold=threshold,flip_horizontal=False, flip_vertical=False)
+    #     st.download_button(
+    #         label="Download All Images as ZIP",
+    #         data=zip_buffer,
+    #         file_name="all_images.zip",
+    #         mime="application/zip"
+    #     )
+    #-------------------------------Now Download All Images button @ End of page-----------------------
 
     cols = st.columns(2)
     for i, (name, url_or_file) in enumerate(images_info):
@@ -546,6 +556,8 @@ if images_info:
                     processed_image = img_byte_arr.getvalue()
 
                 if processed_image:
+                    # Store the processed image for downloading
+                    images_info[i]=((name, processed_image))  # Add renamed/flipped image to the list
                     st.image(processed_image, caption=name)
                     st.download_button(
                         label=f"Download {name.rsplit('.', 1)[0]}",
@@ -554,3 +566,13 @@ if images_info:
                         mime=f"image/{ext}",
                         key=f"download_{i}"  # Unique key based on index
                     )
+    #------------------------Download All Images Button-----------------------------------------
+    if st.button("Download All Images", key="download_all"):
+        zip_buffer = download_all_images_as_zip(images_info, remove_bg=remove_bg, add_bg=add_bg, bg_image=bg_image, resize_foreground=resize_fg, threshold=threshold,flip_horizontal=flip_horizontal, flip_vertical=flip_vertical)
+        st.download_button(
+            label="Download All Images as ZIP",
+            data=zip_buffer,
+            file_name="all_images.zip",
+            mime="application/zip"
+        )
+ 
